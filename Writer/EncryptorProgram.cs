@@ -1,5 +1,6 @@
 using System;
 using System.Text.RegularExpressions;
+using System.Linq;
 
 class Program
 {
@@ -7,8 +8,30 @@ class Program
     {
         try
         {
-            Console.Write("Введіть сід-фразу: ");
-            string seedPhrase = Console.ReadLine();
+            string seedPhrase;
+            bool isSeedValid = false;
+            do
+            {
+                Console.WriteLine("Вимоги до сід-фрази:");
+                Console.WriteLine("- Повинна складатися з 12 або 24 слів");
+                Console.WriteLine("- Слова повинні бути розділені одним пробілом");
+                Console.WriteLine("- Тільки слова зі стандартного словника BIP-39");
+                Console.WriteLine("- Всі слова повинні бути в нижньому регістрі");
+                
+                Console.Write("\nВведіть сід-фразу: ");
+                seedPhrase = Console.ReadLine();
+
+                try
+                {
+                    ValidateSeedPhrase(seedPhrase);
+                    isSeedValid = true;
+                }
+                catch (ArgumentException ex)
+                {
+                    Console.WriteLine($"\n❌ {ex.Message}");
+                    Console.WriteLine("Спробуйте ще раз.");
+                }
+            } while (!isSeedValid);
 
             string password;
             bool isPasswordValid = false;
@@ -65,6 +88,36 @@ class Program
         catch (Exception ex)
         {
             Console.WriteLine($"\n❌ Неочікувана помилка: {ex.Message}");
+        }
+    }
+
+    private static void ValidateSeedPhrase(string seedPhrase)
+    {
+        if (string.IsNullOrEmpty(seedPhrase))
+            throw new ArgumentException("Сід-фраза не може бути порожньою");
+
+        // Перевірка на зайві пробіли
+        if (seedPhrase.StartsWith(" ") || seedPhrase.EndsWith(" ") || seedPhrase.Contains("  "))
+            throw new ArgumentException("Сід-фраза не повинна містити зайві пробіли");
+
+        // Розділення на слова
+        var words = seedPhrase.Split(' ');
+
+        // Перевірка кількості слів
+        if (words.Length != 12 && words.Length != 24)
+            throw new ArgumentException($"Сід-фраза повинна складатися з 12 або 24 слів (зараз {words.Length})");
+
+        // Перевірка кожного слова
+        foreach (var word in words)
+        {
+            if (string.IsNullOrEmpty(word))
+                throw new ArgumentException("Знайдено порожнє слово");
+
+            if (!Regex.IsMatch(word, "^[a-z]+$"))
+                throw new ArgumentException($"Слово '{word}' містить неприпустимі символи (дозволені тільки малі літери)");
+
+            if (!Bip39Words.IsValidWord(word))
+                throw new ArgumentException($"Слово '{word}' відсутнє в словнику BIP-39");
         }
     }
 
