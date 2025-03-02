@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Reader/*.cs" />
+    <Compile Remove="Writer/*.cs" />
   </ItemGroup>
 
-</Project>
+</Project> 
