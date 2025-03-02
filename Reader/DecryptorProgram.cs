@@ -1,19 +1,52 @@
 using System;
+using System.IO;
+using System.Security.Cryptography;
 
 class DecryptorProgram
 {
     static void Main()
     {
-        Console.Write("Введіть шлях до QR-коду: ");
-        string qrFilePath = Console.ReadLine();
+        try
+        {
+            Console.Write("Введіть шлях до QR-коду: ");
+            string qrFilePath = Console.ReadLine();
 
-        Console.Write("Введіть секретний пароль: ");
-        string password = Console.ReadLine();
+            string encryptedSeed;
+            try
+            {
+                encryptedSeed = QRCodeReaderUtil.ReadQRCode(qrFilePath);
+            }
+            catch (FileNotFoundException ex)
+            {
+                Console.WriteLine(ex.Message);
+                return;
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine(ex.Message);
+                return;
+            }
 
-        string encryptedSeed = QRCodeReaderUtil.ReadQRCode(qrFilePath);
-        Console.WriteLine($"📄 Зашифровані дані: {encryptedSeed}");
+            Console.Write("Введіть секретний пароль: ");
+            string password = Console.ReadLine();
 
-        string decryptedSeed = SeedEncryptor.Decrypt(encryptedSeed, password);
-        Console.WriteLine($"✅ Відновлена сід-фраза: {decryptedSeed}");
+            try
+            {
+                string decryptedSeed = SeedEncryptor.Decrypt(encryptedSeed, password);
+                Console.WriteLine($"✅ Відновлена сід-фраза: {decryptedSeed}");
+            }
+            catch (CryptographicException)
+            {
+                Console.WriteLine("❌ Невірний пароль");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Помилка розшифрування: {ex.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Неочікувана помилка: {ex.Message}");
+        }
     }
 }
