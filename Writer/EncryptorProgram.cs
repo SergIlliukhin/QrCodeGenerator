@@ -1,10 +1,28 @@
 using System;
 using System.Text.RegularExpressions;
 using System.Linq;
+using System.Collections.Generic;
+using System.Globalization;
+using QrCodeGenerator.Shared;
+using System.Runtime.CompilerServices;
+using System.Text;
 
-class Program
+namespace QrCodeGenerator.Writer
 {
-    static void Main()
+    internal sealed class Program
+    {
+        private static readonly CompositeFormat ValidationErrorFormat = CompositeFormat.Parse(Resources.Messages.ValidationError);
+        private static readonly CompositeFormat EncryptedSeedPhraseFormat = CompositeFormat.Parse(Resources.Messages.EncryptedSeedPhrase);
+        private static readonly CompositeFormat QrCodeSavedFormat = CompositeFormat.Parse(Resources.Messages.QrCodeSaved);
+        private static readonly CompositeFormat EncryptionErrorFormat = CompositeFormat.Parse(Resources.Messages.EncryptionError);
+        private static readonly CompositeFormat InvalidWordCountFormat = CompositeFormat.Parse(Resources.Messages.InvalidWordCount);
+        private static readonly CompositeFormat InvalidWordCharactersFormat = CompositeFormat.Parse(Resources.Messages.InvalidWordCharacters);
+        private static readonly CompositeFormat WordNotInDictionaryFormat = CompositeFormat.Parse(Resources.Messages.WordNotInDictionary);
+        
+        // Simple string formats
+        private static readonly CompositeFormat SimpleFormat = CompositeFormat.Parse("{0}");
+
+        static void Main()
     {
         try
         {
@@ -12,14 +30,14 @@ class Program
             bool isSeedValid = false;
             do
             {
-                Console.WriteLine("Вимоги до сід-фрази:");
-                Console.WriteLine("- Повинна складатися з 12 або 24 слів");
-                Console.WriteLine("- Слова повинні бути розділені одним пробілом");
-                Console.WriteLine("- Тільки слова зі стандартного словника BIP-39");
-                Console.WriteLine("- Всі слова повинні бути в нижньому регістрі");
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, SimpleFormat, Resources.Messages.SeedPhraseRequirements));
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, SimpleFormat, Resources.Messages.SeedPhraseLength));
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, SimpleFormat, Resources.Messages.SeedPhraseSpacing));
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, SimpleFormat, Resources.Messages.SeedPhraseDictionary));
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, SimpleFormat, Resources.Messages.SeedPhraseLowercase));
                 
-                Console.Write("\nВведіть сід-фразу: ");
-                seedPhrase = Console.ReadLine();
+                Console.Write(string.Format(CultureInfo.InvariantCulture, SimpleFormat, Resources.Messages.EnterSeedPhrase));
+                seedPhrase = Console.ReadLine() ?? string.Empty;
 
                 try
                 {
@@ -28,8 +46,8 @@ class Program
                 }
                 catch (ArgumentException ex)
                 {
-                    Console.WriteLine($"\n❌ {ex.Message}");
-                    Console.WriteLine("Спробуйте ще раз.");
+                    Console.WriteLine(string.Format(CultureInfo.InvariantCulture, ValidationErrorFormat, ex.Message));
+                    Console.WriteLine(string.Format(CultureInfo.InvariantCulture, SimpleFormat, Resources.Messages.TryAgain));
                 }
             } while (!isSeedValid);
 
@@ -37,15 +55,15 @@ class Program
             bool isPasswordValid = false;
             do
             {
-                Console.WriteLine("\nВимоги до пароля:");
-                Console.WriteLine("- Мінімум 12 символів");
-                Console.WriteLine("- Хоча б одна велика літера (A-Z)");
-                Console.WriteLine("- Хоча б одна мала літера (a-z)");
-                Console.WriteLine("- Хоча б одна цифра (0-9)");
-                Console.WriteLine("- Хоча б один спеціальний символ (!@#$%^&* тощо)");
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, SimpleFormat, Resources.Messages.PasswordRequirements));
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, SimpleFormat, Resources.Messages.PasswordLength));
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, SimpleFormat, Resources.Messages.PasswordUppercase));
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, SimpleFormat, Resources.Messages.PasswordLowercase));
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, SimpleFormat, Resources.Messages.PasswordDigit));
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, SimpleFormat, Resources.Messages.PasswordSpecial));
                 
-                Console.Write("\nВведіть секретний пароль: ");
-                password = Console.ReadLine();
+                Console.Write(string.Format(CultureInfo.InvariantCulture, SimpleFormat, Resources.Messages.EnterPassword));
+                password = Console.ReadLine() ?? string.Empty;
 
                 try
                 {
@@ -54,96 +72,97 @@ class Program
                 }
                 catch (ArgumentException ex)
                 {
-                    Console.WriteLine($"\n❌ {ex.Message}");
-                    Console.WriteLine("Спробуйте ще раз.");
+                    Console.WriteLine(string.Format(CultureInfo.InvariantCulture, ValidationErrorFormat, ex.Message));
+                    Console.WriteLine(string.Format(CultureInfo.InvariantCulture, SimpleFormat, Resources.Messages.TryAgain));
                 }
             } while (!isPasswordValid);
 
-            Console.Write("\nВведіть назву файлу для QR-коду (або натисніть Enter для значення за замовчуванням 'seed_qr.png'): ");
-            string qrFilePath = Console.ReadLine();
+            Console.Write(string.Format(CultureInfo.InvariantCulture, SimpleFormat, Resources.Messages.EnterQrFileName));
+            string qrFilePath = Console.ReadLine() ?? string.Empty;
             
             if (string.IsNullOrWhiteSpace(qrFilePath))
             {
-                qrFilePath = "seed_qr.png";
+                qrFilePath = Resources.Messages.DefaultQrFileName;
             }
-            else if (!qrFilePath.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+            else if (!qrFilePath.EndsWith(Resources.Messages.PngExtension, StringComparison.OrdinalIgnoreCase))
             {
-                qrFilePath += ".png";
+                qrFilePath += Resources.Messages.PngExtension;
             }
 
             string encryptedSeed = SeedEncryptor.Encrypt(seedPhrase, password);
-            Console.WriteLine($"\n🔐 Зашифрована сід-фраза: {encryptedSeed}");
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, EncryptedSeedPhraseFormat, encryptedSeed));
 
             QRCodeGeneratorUtil.GenerateQRCode(encryptedSeed, qrFilePath);
-            Console.WriteLine($"✅ QR-код збережено у {qrFilePath}");
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, QrCodeSavedFormat, qrFilePath));
         }
         catch (ArgumentException ex)
         {
-            Console.WriteLine($"\n❌ Помилка валідації: {ex.Message}");
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, ValidationErrorFormat, ex.Message));
         }
         catch (System.Security.Cryptography.CryptographicException ex)
         {
-            Console.WriteLine($"\n❌ Помилка шифрування: {ex.Message}");
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, EncryptionErrorFormat, ex.Message));
         }
-        catch (Exception ex)
+        catch (System.IO.IOException ex)
         {
-            Console.WriteLine($"\n❌ Неочікувана помилка: {ex.Message}");
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, ValidationErrorFormat, ex.Message));
         }
     }
 
     private static void ValidateSeedPhrase(string seedPhrase)
     {
         if (string.IsNullOrEmpty(seedPhrase))
-            throw new ArgumentException("Сід-фраза не може бути порожньою");
+            throw new ArgumentException(Resources.Messages.EmptySeedPhrase);
 
         // Перевірка на зайві пробіли
-        if (seedPhrase.StartsWith(" ") || seedPhrase.EndsWith(" ") || seedPhrase.Contains("  "))
-            throw new ArgumentException("Сід-фраза не повинна містити зайві пробіли");
+        if (seedPhrase.StartsWith(' ') || seedPhrase.EndsWith(' ') || seedPhrase.Contains(Resources.Messages.MultipleSpacesPattern, StringComparison.Ordinal))
+            throw new ArgumentException(Resources.Messages.ExtraSpaces);
 
         // Розділення на слова
         var words = seedPhrase.Split(' ');
 
         // Перевірка кількості слів
         if (words.Length != 12 && words.Length != 24)
-            throw new ArgumentException($"Сід-фраза повинна складатися з 12 або 24 слів (зараз {words.Length})");
+            throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, InvalidWordCountFormat, words.Length));
 
         // Перевірка кожного слова
         foreach (var word in words)
         {
             if (string.IsNullOrEmpty(word))
-                throw new ArgumentException("Знайдено порожнє слово");
+                throw new ArgumentException(Resources.Messages.EmptyWord);
 
-            if (!Regex.IsMatch(word, "^[a-z]+$"))
-                throw new ArgumentException($"Слово '{word}' містить неприпустимі символи (дозволені тільки малі літери)");
+            if (!Regex.IsMatch(word, Resources.Messages.LowercaseLettersPattern, RegexOptions.CultureInvariant))
+                throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, InvalidWordCharactersFormat, word));
 
             if (!Bip39Words.IsValidWord(word))
-                throw new ArgumentException($"Слово '{word}' відсутнє в словнику BIP-39");
+                throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, WordNotInDictionaryFormat, word));
         }
     }
 
     private static void ValidatePasswordFormat(string password)
     {
         if (string.IsNullOrEmpty(password))
-            throw new ArgumentException("Пароль не може бути порожнім");
+            throw new ArgumentException(Resources.Messages.EmptyPassword);
 
         var errors = new System.Collections.Generic.List<string>();
 
         if (password.Length < 12)
-            errors.Add("Пароль закороткий (потрібно мінімум 12 символів)");
+            errors.Add(Resources.Messages.PasswordTooShort);
 
-        if (!Regex.IsMatch(password, "[A-Z]"))
-            errors.Add("Пароль повинен містити хоча б одну велику літеру");
+        if (!Regex.IsMatch(password, Resources.Messages.UppercaseLetterPattern, RegexOptions.CultureInvariant))
+            errors.Add(Resources.Messages.NoUppercase);
 
-        if (!Regex.IsMatch(password, "[a-z]"))
-            errors.Add("Пароль повинен містити хоча б одну малу літеру");
+        if (!Regex.IsMatch(password, Resources.Messages.LowercaseLetterPattern, RegexOptions.CultureInvariant))
+            errors.Add(Resources.Messages.NoLowercase);
 
-        if (!Regex.IsMatch(password, "[0-9]"))
-            errors.Add("Пароль повинен містити хоча б одну цифру");
+        if (!Regex.IsMatch(password, Resources.Messages.DigitPattern, RegexOptions.CultureInvariant))
+            errors.Add(Resources.Messages.NoDigit);
 
-        if (!Regex.IsMatch(password, "[^A-Za-z0-9]"))
-            errors.Add("Пароль повинен містити хоча б один спеціальний символ");
+        if (!Regex.IsMatch(password, Resources.Messages.SpecialCharPattern, RegexOptions.CultureInvariant))
+            errors.Add(Resources.Messages.NoSpecialChar);
 
         if (errors.Count > 0)
-            throw new ArgumentException(string.Join("\n", errors));
+            throw new ArgumentException(string.Join(Resources.Messages.NewLine, errors));
     }
+}
 }

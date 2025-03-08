@@ -11,8 +11,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Runtime.CompilerServices;
 
-
-public class SeedEncryptor
+namespace QrCodeGenerator.Shared
+{
+    internal static class SeedEncryptor
 {
     private const int SALT_SIZE = 32;
     private const int KEY_SIZE = 32; // 256 bits
@@ -32,7 +33,7 @@ public class SeedEncryptor
 
         ValidatePassword(password);
 
-        byte[] key = null;
+        byte[] key = new byte[KEY_SIZE];
         try
         {
             // Generate a random salt
@@ -62,7 +63,7 @@ public class SeedEncryptor
 
             // Encrypt using AES-GCM
 #if NET6_0_OR_GREATER
-            using (var aes = new AesGcm(key))
+            using (var aes = new AesGcm(key, TAG_SIZE))
             {
                 aes.Encrypt(nonce, inputBytes, ciphertext, tag);
             }
@@ -101,7 +102,7 @@ public class SeedEncryptor
 
         ValidatePassword(password);
 
-        byte[] key = null;
+        byte[] key = new byte[KEY_SIZE];
         try
         {
             byte[] encryptedBytes = Convert.FromBase64String(encryptedText);
@@ -141,7 +142,7 @@ public class SeedEncryptor
             // Decrypt using AES-GCM
             byte[] plaintext = new byte[ciphertext.Length];
 #if NET6_0_OR_GREATER
-            using (var aes = new AesGcm(key))
+            using (var aes = new AesGcm(key, TAG_SIZE))
             {
                 aes.Decrypt(nonce, ciphertext, tag, plaintext);
             }
@@ -206,7 +207,7 @@ public class SeedEncryptor
         }
 
         // Derive the key
-        byte[] key = null;
+        byte[] key = new byte[KEY_SIZE];
         try
         {
             key = new byte[KEY_SIZE];
@@ -252,5 +253,6 @@ public class SeedEncryptor
             if (key != null)
                 CryptographicOperations.ZeroMemory(key);
         }
+    }
     }
 }
