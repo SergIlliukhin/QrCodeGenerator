@@ -3,9 +3,7 @@ using ZXing.QrCode;
 using SkiaSharp;
 using System.IO;
 
-namespace QrCodeGenerator.Writer
-{
-    internal static class QRCodeGeneratorUtil
+public class QRCodeGeneratorUtil
 {
     public static void GenerateQRCode(string text, string filePath)
     {
@@ -38,5 +36,4 @@ namespace QrCodeGenerator.Writer
         using var stream = File.OpenWrite(filePath);
         data.SaveTo(stream);
     }
-}
 }

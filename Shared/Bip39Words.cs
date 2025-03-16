@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 
-namespace QrCodeGenerator.Shared
-{
-    internal static class Bip39Words
+public static class Bip39Words
 {
     // Стандартний словник BIP-39 (2048 слів)
     private static readonly HashSet<string> ValidWords = new HashSet<string>
@@ -218,5 +216,4 @@ namespace QrCodeGenerator.Shared
     {
         return ValidWords.Contains(word);
     }
-}
-}
+} 

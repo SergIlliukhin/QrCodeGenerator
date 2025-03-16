@@ -11,9 +11,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Runtime.CompilerServices;
 
-namespace QrCodeGenerator.Shared
-{
-    internal static class SeedEncryptor
+
+public class SeedEncryptor
 {
     private const int SALT_SIZE = 32;
     private const int KEY_SIZE = 32; // 256 bits
@@ -33,7 +32,7 @@ namespace QrCodeGenerator.Shared
 
         ValidatePassword(password);
 
-        byte[] key = new byte[KEY_SIZE];
+        byte[] key = null;
         try
         {
             // Generate a random salt
@@ -63,7 +62,7 @@ namespace QrCodeGenerator.Shared
 
             // Encrypt using AES-GCM
 #if NET6_0_OR_GREATER
-            using (var aes = new AesGcm(key, TAG_SIZE))
+            using (var aes = new AesGcm(key))
             {
                 aes.Encrypt(nonce, inputBytes, ciphertext, tag);
             }
@@ -102,7 +101,7 @@ namespace QrCodeGenerator.Shared
 
         ValidatePassword(password);
 
-        byte[] key = new byte[KEY_SIZE];
+        byte[] key = null;
         try
         {
             byte[] encryptedBytes = Convert.FromBase64String(encryptedText);
@@ -142,7 +141,7 @@ namespace QrCodeGenerator.Shared
             // Decrypt using AES-GCM
             byte[] plaintext = new byte[ciphertext.Length];
 #if NET6_0_OR_GREATER
-            using (var aes = new AesGcm(key, TAG_SIZE))
+            using (var aes = new AesGcm(key))
             {
                 aes.Decrypt(nonce, ciphertext, tag, plaintext);
             }
@@ -207,7 +206,7 @@ namespace QrCodeGenerator.Shared
         }
 
         // Derive the key
-        byte[] key = new byte[KEY_SIZE];
+        byte[] key = null;
         try
         {
             key = new byte[KEY_SIZE];
@@ -253,6 +252,5 @@ namespace QrCodeGenerator.Shared
             if (key != null)
                 CryptographicOperations.ZeroMemory(key);
         }
-    }
     }
 }
