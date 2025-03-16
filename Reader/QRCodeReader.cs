@@ -3,21 +3,15 @@ using ZXing.Common;
 using System;
 using System.Linq;
 using System.IO;
-using System.Text;
-using System.Globalization;
 using SkiaSharp;
-using QrCodeGenerator.Shared;
 
-namespace QrCodeGenerator.Reader
+public class QRCodeReaderUtil
 {
-    internal static class QRCodeReaderUtil
-    {
-        private static readonly CompositeFormat QrNotFoundFormat = CompositeFormat.Parse(Resources.Messages.QrNotFound);
-        internal static string ReadQRCode(string filePath)
+    public static string ReadQRCode(string filePath)
     {
         if (!File.Exists(filePath))
         {
-            throw new FileNotFoundException(string.Format(CultureInfo.InvariantCulture, QrNotFoundFormat, filePath));
+            throw new FileNotFoundException($"❌ QR-код не знайдено за шляхом: {filePath}");
         }
 
         try
@@ -25,7 +19,7 @@ namespace QrCodeGenerator.Reader
             using var bitmap = SKBitmap.Decode(filePath);
             if (bitmap == null)
             {
-                throw new InvalidOperationException(Resources.Messages.InvalidImageFile);
+                throw new InvalidOperationException("❌ Неможливо відкрити файл як зображення");
             }
 
             var width = bitmap.Width;
@@ -49,14 +43,14 @@ namespace QrCodeGenerator.Reader
             
             if (result == null)
             {
-                throw new InvalidOperationException(Resources.Messages.QrNotRecognized);
+                throw new InvalidOperationException("❌ QR-код не розпізнано");
             }
             
             return result.Text;
         }
         catch (Exception ex) when (!(ex is FileNotFoundException))
         {
-            throw new InvalidOperationException(Resources.Messages.QrReadError, ex);
+            throw new InvalidOperationException("❌ Помилка при читанні QR-коду", ex);
         }
     }
-}}
+}

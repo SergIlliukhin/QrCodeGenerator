@@ -1,6 +1,6 @@
 using System;
 
-namespace QrCodeGenerator.Shared
+namespace QrCodeGenerator.Writer
 {
     internal static class Resources
     {
@@ -53,15 +53,6 @@ namespace QrCodeGenerator.Shared
             public const string LowercaseLetterPattern = "[a-z]";
             public const string DigitPattern = "[0-9]";
             public const string SpecialCharPattern = "[^A-Za-z0-9]";
-            
-            // Reader messages
-            public const string EnterQrPath = "Введіть шлях до QR-коду: ";
-            public const string DecryptedSeedPhrase = "✅ Відновлена сід-фраза: {0}";
-            public const string InvalidPassword = "❌ Невірний пароль";
-            public const string QrNotFound = "❌ QR-код не знайдено за шляхом: {0}";
-            public const string InvalidImageFile = "❌ Неможливо відкрити файл як зображення";
-            public const string QrNotRecognized = "❌ QR-код не розпізнано";
-            public const string QrReadError = "❌ Помилка при читанні QR-коду";
             
             // Other constants
             public const string NewLine = "\n";
