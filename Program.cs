@@ -3,13 +3,15 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using System.IO;
 using System.Security.Cryptography;
+using System.Diagnostics.CodeAnalysis;
 
 #nullable enable
 
 namespace QrCodeGenerator
 {
-    class Program
+    sealed class Program
     {
+        [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Need to catch all exceptions in the main entry point to prevent application crash")]
         static void Main()
         {
             try
@@ -18,25 +20,41 @@ namespace QrCodeGenerator
                 Console.WriteLine("1. Згенерувати QR-код для сід-фрази (шифрування)");
                 Console.WriteLine("2. Розшифрувати QR-код з сід-фразою");
                 Console.Write("\nВведіть номер опції (1 або 2): ");
-                
-                string? option = Console.ReadLine();
-                
-                if (option == "1")
+
+                var choice = Console.ReadLine();
+                switch (choice)
                 {
-                    EncryptAndGenerateQR();
+                    case "1":
+                        EncryptAndGenerateQR();
+                        break;
+                    case "2":
+                        DecryptQR();
+                        break;
+                    default:
+                        Console.WriteLine("❌ Невірний вибір. Будь ласка, введіть 1 або 2.");
+                        break;
                 }
-                else if (option == "2")
-                {
-                    DecryptQR();
-                }
-                else
-                {
-                    Console.WriteLine("❌ Невірний вибір. Будь ласка, введіть 1 або 2.");
-                }
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine($"❌ Помилка валідації: {ex.Message}");
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine($"❌ Помилка вводу/виводу: {ex.Message}");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Console.WriteLine($"❌ Помилка доступу: {ex.Message}");
+            }
+            catch (CryptographicException ex)
+            {
+                Console.WriteLine($"❌ Помилка шифрування: {ex.Message}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"\n❌ Неочікувана помилка: {ex.Message}");
+                Console.WriteLine($"❌ Несподівана помилка: {ex.Message}");
+                Console.WriteLine("Будь ласка, повідомте про цю помилку розробникам.");
             }
         }
 
@@ -112,84 +130,81 @@ namespace QrCodeGenerator
             Console.WriteLine($"✅ QR-код збережено у {qrFilePath}");
         }
 
+        [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Need to catch all exceptions to provide user-friendly error messages")]
         private static void DecryptQR()
         {
-            Console.Write("\nВведіть шлях до QR-коду: ");
-            string? qrFilePath = Console.ReadLine();
-
-            if (string.IsNullOrWhiteSpace(qrFilePath))
-            {
-                Console.WriteLine("❌ Шлях до файлу не може бути порожнім");
-                return;
-            }
-
-            string encryptedSeed;
             try
             {
-                encryptedSeed = QRCodeReaderUtil.ReadQRCode(qrFilePath);
+                Console.Write("\nВведіть шлях до QR-коду: ");
+                var qrFilePath = Console.ReadLine()?.Trim() ?? throw new ArgumentException("Шлях до файлу не може бути порожнім");
+
+                if (!File.Exists(qrFilePath))
+                {
+                    throw new FileNotFoundException("Файл не знайдено", qrFilePath);
+                }
+
+                var encryptedSeed = QRCodeReaderUtil.ReadQRCode(qrFilePath);
+                if (string.IsNullOrEmpty(encryptedSeed))
+                {
+                    throw new InvalidOperationException("Не вдалося прочитати QR-код");
+                }
+
+                Console.Write("\nВведіть пароль для розшифрування: ");
+                var password = Console.ReadLine() ?? throw new ArgumentException("Пароль не може бути порожнім");
+
+                ValidatePasswordFormat(password);
+
+                var decryptedSeed = SeedEncryptor.Decrypt(encryptedSeed, password);
+                Console.WriteLine($"\n✅ Розшифрована сід-фраза: {decryptedSeed}");
             }
             catch (FileNotFoundException ex)
             {
-                Console.WriteLine(ex.Message);
-                return;
+                Console.WriteLine($"❌ Файл не знайдено: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine($"❌ Помилка валідації: {ex.Message}");
             }
             catch (InvalidOperationException ex)
             {
-                Console.WriteLine(ex.Message);
-                return;
+                Console.WriteLine($"❌ Помилка операції: {ex.Message}");
             }
-
-            Console.Write("\nВведіть секретний пароль: ");
-            string? password = Console.ReadLine();
-
-            if (string.IsNullOrEmpty(password))
+            catch (CryptographicException ex)
             {
-                Console.WriteLine("❌ Пароль не може бути порожнім");
-                return;
+                Console.WriteLine($"❌ Помилка розшифрування: {ex.Message}");
             }
-
-            try
+            catch (IOException ex)
             {
-                string decryptedSeed = SeedEncryptor.Decrypt(encryptedSeed, password);
-                Console.WriteLine($"\n✅ Відновлена сід-фраза: {decryptedSeed}");
-            }
-            catch (CryptographicException)
-            {
-                Console.WriteLine("\n❌ Невірний пароль");
+                Console.WriteLine($"❌ Помилка вводу/виводу: {ex.Message}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"\n❌ Помилка розшифрування: {ex.Message}");
+                Console.WriteLine($"❌ Несподівана помилка: {ex.Message}");
+                Console.WriteLine("Будь ласка, повідомте про цю помилку розробникам.");
             }
         }
 
         private static void ValidateSeedPhrase(string seedPhrase)
         {
             if (string.IsNullOrEmpty(seedPhrase))
-                throw new ArgumentException("Сід-фраза не може бути порожньою");
-
-            // Перевірка на зайві пробіли
-            if (seedPhrase.StartsWith(" ") || seedPhrase.EndsWith(" ") || seedPhrase.Contains("  "))
-                throw new ArgumentException("Сід-фраза не повинна містити зайві пробіли");
-
-            // Розділення на слова
-            var words = seedPhrase.Split(' ');
-
-            // Перевірка кількості слів
-            if (words.Length != 12 && words.Length != 24)
-                throw new ArgumentException($"Сід-фраза повинна складатися з 12 або 24 слів (зараз {words.Length})");
-
-            // Перевірка кожного слова
-            foreach (var word in words)
             {
-                if (string.IsNullOrEmpty(word))
-                    throw new ArgumentException("Знайдено порожнє слово");
+                throw new ArgumentException("Сід-фраза не може бути порожньою");
+            }
 
-                if (!Regex.IsMatch(word, "^[a-z]+$"))
-                    throw new ArgumentException($"Слово '{word}' містить неприпустимі символи (дозволені тільки малі літери)");
+            if (seedPhrase.StartsWith(' ') || seedPhrase.EndsWith(' ') || seedPhrase.Contains("  ", StringComparison.Ordinal))
+            {
+                throw new ArgumentException("Сід-фраза не повинна містити пробіли на початку/в кінці або подвійні пробіли");
+            }
 
-                if (!Bip39Words.IsValidWord(word))
-                    throw new ArgumentException($"Слово '{word}' відсутнє в словнику BIP-39");
+            var words = seedPhrase.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length != 12 && words.Length != 24)
+            {
+                throw new ArgumentException("Сід-фраза повинна містити 12 або 24 слова");
+            }
+
+            if (!words.All(word => Bip39Words.IsValidWord(word)))
+            {
+                throw new ArgumentException("Сід-фраза містить недійсні слова. Використовуйте тільки слова зі стандартного списку BIP-39");
             }
         }
 

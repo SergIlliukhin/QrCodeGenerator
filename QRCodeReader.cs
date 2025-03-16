@@ -9,7 +9,7 @@ using SkiaSharp;
 
 namespace QrCodeGenerator
 {
-    public static class QRCodeReaderUtil
+    internal static class QRCodeReaderUtil
     {
         public static string ReadQRCode(string filePath)
         {
