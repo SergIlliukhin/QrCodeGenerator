@@ -169,5 +169,30 @@ namespace QrCodeGenerator
 
             return password;
         }
+
+        public static string ReadText()
+        {
+            string? text = null;
+            while (text == null)
+            {
+                try
+                {
+                    Console.WriteLine("\nВведіть зашифрований текст:");
+                    text = Console.ReadLine();
+                    if (string.IsNullOrEmpty(text))
+                    {
+                        throw new ArgumentException("Текст не може бути порожнім");
+                    }
+                }
+                catch (ArgumentException ex)
+                {
+                    Console.WriteLine($"\n❌ {ex.Message}");
+                    Console.WriteLine("Спробуйте ще раз.");
+                    text = null;
+                }
+            }
+
+            return text;
+        }
     }
 } 

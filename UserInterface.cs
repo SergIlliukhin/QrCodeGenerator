@@ -18,8 +18,9 @@ namespace QrCodeGenerator
                     Console.WriteLine("Що ви хочете зробити?");
                     Console.WriteLine("1. Згенерувати QR-код для сід-фрази (шифрування)");
                     Console.WriteLine("2. Розшифрувати QR-код з сід-фразою");
-                    Console.WriteLine("3. Вийти з програми");
-                    Console.Write("\nВведіть номер опції (1, 2 або 3): ");
+                    Console.WriteLine("3. Розшифрувати текст з сід-фразою");
+                    Console.WriteLine("4. Вийти з програми");
+                    Console.Write("\nВведіть номер опції (1, 2, 3 або 4): ");
 
                     var choice = Console.ReadLine();
                     switch (choice)
@@ -31,17 +32,20 @@ namespace QrCodeGenerator
                             DecryptQR();
                             break;
                         case "3":
+                            DecryptText();
+                            break;
+                        case "4":
                             continueProgram = false;
                             Console.WriteLine("\nДякуємо за використання програми!");
                             break;
                         default:
-                            Console.WriteLine("\n❌ Невірний вибір. Будь ласка, введіть 1, 2 або 3.");
+                            Console.WriteLine("\n❌ Невірний вибір. Будь ласка, введіть 1, 2, 3 або 4.");
                             Console.WriteLine("Натисніть будь-яку клавішу, щоб продовжити...");
                             Console.ReadKey();
                             break;
                     }
 
-                    if (continueProgram && choice is "1" or "2")
+                    if (continueProgram && choice is "1" or "2" or "3")
                     {
                         Console.WriteLine("\nБажаєте виконати ще одну операцію? (y/n)");
                         var answer = Console.ReadLine()?.ToUpperInvariant();
@@ -247,6 +251,52 @@ namespace QrCodeGenerator
                 {
                     password = SeedPhraseManager.ReadPassword();
                     string decryptedSeed = SeedEncryptor.Decrypt(encryptedSeed, password);
+                    Console.WriteLine($"\n✅ Розшифрована сід-фраза: {decryptedSeed}");
+                }
+                catch (CryptographicException)
+                {
+                    Console.WriteLine("\n❌ Невірний пароль");
+                    Console.WriteLine("Спробуйте ще раз.");
+                    password = null;
+                }
+                catch (ArgumentException ex)
+                {
+                    Console.WriteLine($"\n❌ {ex.Message}");
+                    Console.WriteLine("Спробуйте ще раз.");
+                    password = null;
+                }
+            }
+        }
+
+        private static void DecryptText()
+        {
+            string? encryptedText = null;
+            while (encryptedText == null)
+            {
+                try
+                {
+                    Console.WriteLine("\nВведіть зашифрований текст:");
+                    encryptedText = Console.ReadLine();
+                    if (string.IsNullOrEmpty(encryptedText))
+                    {
+                        throw new ArgumentException("Зашифрований текст не може бути порожнім");
+                    }
+                }
+                catch (ArgumentException ex)
+                {
+                    Console.WriteLine($"\n❌ {ex.Message}");
+                    Console.WriteLine("Спробуйте ще раз.");
+                    encryptedText = null;
+                }
+            }
+
+            string? password = null;
+            while (password == null)
+            {
+                try
+                {
+                    password = SeedPhraseManager.ReadPassword();
+                    string decryptedSeed = SeedEncryptor.Decrypt(encryptedText, password);
                     Console.WriteLine($"\n✅ Розшифрована сід-фраза: {decryptedSeed}");
                 }
                 catch (CryptographicException)
