@@ -113,6 +113,22 @@ dotnet run --project QrCodeGenerator.csproj
 - Внутрішні (internal) класи для кращої інкапсуляції
 - Запечатані (sealed) класи для запобігання неправильному наслідуванню
 
+## Тестові дані
+
+### Seed фраза 12 слів
+Зашифроване значення: ```AR+rtCoeci9esJYuGG7fQuoQD080Wg6J6fj3ZFWje291ICUS8x2sj56nVTAe10SIcaQR8MBJX33G0v4bMT8dMBxRdLtKNgJrL7k2lojVnbGzHnxpAlA+f5hCC22OUHM4YMtkXWlXXRoV68Edb4Ct3rhBB8z6i/BYznqdvIlcF8ZprHqD1qTj7u3vE2MI3U0pSw==```
+
+Пароль: ```Sergii19_Update```
+
+Фраза: ```glory promote mansion submit captain finger virus verb utility general welcome flush```
+
+### Seed фраза 24 слова
+Зашифроване значення: ```AY48ARdedeMSTIRP4ZAob+VuPl25VjJkSjI+EKY7QTz5ABNVfY+LZX+fL1krRU+f2ote3SjlQSll7qRMtTe36x1pLg5wl11orD1wvsD3LJCMHD1m43reVNqTWfrVtnO3Rgqufe00secPE6eK527PgSvSwpTOo2z+WIx6MelR4dfu0ZgIPhYcQwZzDKg2lXCNS0tS5x1w/NIa95TjIPPntjLBhafrXd0OIxsdLH7GJugCZX0tXuKZaOQhgMcY6QDilXRWcBViPMxifTAWRXyMuISGKqP/yjlpr8f3jEha9xCC```
+
+Пароль: ```Mariaaaa)$34```
+
+Фраза: ```future alarm discover sustain maple keen shrimp uncle wagon tray puzzle ring embrace velvet elegant robust census provide layer decorate cause foam pride timber```
+
 ## Розробка
 
 Цей проект було розроблено за допомогою штучного інтелекту:
