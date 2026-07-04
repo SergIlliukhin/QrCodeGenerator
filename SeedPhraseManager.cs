@@ -151,8 +151,7 @@ namespace QrCodeGenerator
                     Console.WriteLine("- Хоча б одна цифра (0-9)");
                     Console.WriteLine("- Хоча б один спеціальний символ (!@#$%^&* тощо)");
                     
-                    Console.Write("\nВведіть пароль: ");
-                    password = Console.ReadLine();
+                    password = ConsoleHelper.ReadMaskedLine("\nВведіть пароль: ");
                     if (string.IsNullOrEmpty(password))
                     {
                         throw new ArgumentException("Пароль не може бути порожнім");
@@ -195,4 +194,4 @@ namespace QrCodeGenerator
             return text;
         }
     }
-} 
+}

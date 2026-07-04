@@ -251,7 +251,7 @@ namespace QrCodeGenerator
                 {
                     password = SeedPhraseManager.ReadPassword();
                     string decryptedSeed = SeedEncryptor.Decrypt(encryptedSeed, password);
-                    Console.WriteLine($"\n✅ Розшифрована сід-фраза: {decryptedSeed}");
+                    ShowDecryptedSeedPhrase(decryptedSeed);
                 }
                 catch (CryptographicException)
                 {
@@ -297,7 +297,7 @@ namespace QrCodeGenerator
                 {
                     password = SeedPhraseManager.ReadPassword();
                     string decryptedSeed = SeedEncryptor.Decrypt(encryptedText, password);
-                    Console.WriteLine($"\n✅ Розшифрована сід-фраза: {decryptedSeed}");
+                    ShowDecryptedSeedPhrase(decryptedSeed);
                 }
                 catch (CryptographicException)
                 {
@@ -313,5 +313,18 @@ namespace QrCodeGenerator
                 }
             }
         }
+
+        private static void ShowDecryptedSeedPhrase(string decryptedSeed)
+        {
+            Console.WriteLine("\n✅ Сід-фразу успішно розшифровано.");
+
+            if (ConsoleHelper.AskYesNo("⚠️ Показувати сід-фразу на екрані небезпечно. Ви впевнені, що хочете її побачити? (y/n)"))
+            {
+                Console.WriteLine($"\n🔓 Сід-фраза: {decryptedSeed}");
+                return;
+            }
+
+            Console.WriteLine("Сід-фразу приховано.");
+        }
     }
-} 
+}

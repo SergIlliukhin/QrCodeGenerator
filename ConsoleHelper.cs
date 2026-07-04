@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Text;
 
 namespace QrCodeGenerator
 {
@@ -29,6 +30,42 @@ namespace QrCodeGenerator
             return answer is "Y" or "YES";
         }
 
+        public static string ReadMaskedLine(string prompt)
+        {
+            Console.Write(prompt);
+            var input = new StringBuilder();
+
+            while (true)
+            {
+                var keyInfo = Console.ReadKey(intercept: true);
+
+                if (keyInfo.Key == ConsoleKey.Enter)
+                {
+                    Console.WriteLine();
+                    return input.ToString();
+                }
+
+                if (keyInfo.Key == ConsoleKey.Backspace)
+                {
+                    if (input.Length > 0)
+                    {
+                        input.Length--;
+                        Console.Write("\b \b");
+                    }
+
+                    continue;
+                }
+
+                if (char.IsControl(keyInfo.KeyChar))
+                {
+                    continue;
+                }
+
+                input.Append(keyInfo.KeyChar);
+                Console.Write('*');
+            }
+        }
+
         public static void WaitForKey(string message = "Натисніть будь-яку клавішу, щоб продовжити...")
         {
             Console.WriteLine(message);
@@ -55,4 +92,4 @@ namespace QrCodeGenerator
             Console.Clear();
         }
     }
-} 
+}
