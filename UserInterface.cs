@@ -82,6 +82,13 @@ namespace QrCodeGenerator
         private static void EncryptAndGenerateQR()
         {
             using SecretBuffer seedPhrase = SeedPhraseManager.ReadSeedPhrase();
+#if DEBUG
+            // E2E test hook: exercises the last-chance handler (wipe → message → exit 1). Compiled out of Release builds.
+            if (Environment.GetEnvironmentVariable("QRGEN_E2E_FAULT") == "after-seed")
+            {
+                throw new InvalidOperationException("Injected e2e fault");
+            }
+#endif
             using SecretBuffer password = SeedPhraseManager.ReadPassword();
             string qrFilePath = SeedPhraseManager.GetValidQrFilePath();
 

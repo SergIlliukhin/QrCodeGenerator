@@ -9,6 +9,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QrCodeGenerator.Tests", "tests\QrCodeGenerator.Tests\QrCodeGenerator.Tests.csproj", "{116345B6-04E0-414D-BEAD-5F847B87A865}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QrCodeGenerator.E2ETests", "tests\QrCodeGenerator.E2ETests\QrCodeGenerator.E2ETests.csproj", "{B645B048-2807-4824-A5BE-9EBC467B00D1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,12 +45,25 @@ Global
 		{116345B6-04E0-414D-BEAD-5F847B87A865}.Release|x64.Build.0 = Release|Any CPU
 		{116345B6-04E0-414D-BEAD-5F847B87A865}.Release|x86.ActiveCfg = Release|Any CPU
 		{116345B6-04E0-414D-BEAD-5F847B87A865}.Release|x86.Build.0 = Release|Any CPU
+		{B645B048-2807-4824-A5BE-9EBC467B00D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B645B048-2807-4824-A5BE-9EBC467B00D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B645B048-2807-4824-A5BE-9EBC467B00D1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B645B048-2807-4824-A5BE-9EBC467B00D1}.Debug|x64.Build.0 = Debug|Any CPU
+		{B645B048-2807-4824-A5BE-9EBC467B00D1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B645B048-2807-4824-A5BE-9EBC467B00D1}.Debug|x86.Build.0 = Debug|Any CPU
+		{B645B048-2807-4824-A5BE-9EBC467B00D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B645B048-2807-4824-A5BE-9EBC467B00D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B645B048-2807-4824-A5BE-9EBC467B00D1}.Release|x64.ActiveCfg = Release|Any CPU
+		{B645B048-2807-4824-A5BE-9EBC467B00D1}.Release|x64.Build.0 = Release|Any CPU
+		{B645B048-2807-4824-A5BE-9EBC467B00D1}.Release|x86.ActiveCfg = Release|Any CPU
+		{B645B048-2807-4824-A5BE-9EBC467B00D1}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{116345B6-04E0-414D-BEAD-5F847B87A865} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{B645B048-2807-4824-A5BE-9EBC467B00D1} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {67005F0E-478E-4F7B-905C-49A862F90309}

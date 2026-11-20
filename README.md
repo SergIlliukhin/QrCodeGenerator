@@ -149,6 +149,31 @@ dotnet run --project QrCodeGenerator.csproj
 
 Фраза: ```future alarm discover sustain maple keen shrimp uncle wagon tray puzzle ring embrace velvet elegant robust census provide layer decorate cause foam pride timber```
 
+## Тести
+
+### Модульні тести
+```bash
+dotnet test tests/QrCodeGenerator.Tests
+```
+
+### End-to-end тести консолі
+Запускають зібрану програму в справжньому терміналі, вводять дані й перевіряють екран та історію прокрутки: маскування введення, показ і очищення сід-фрази та зашифрованого тексту, очищення при виході, Ctrl+C і помилці, відмову при перенаправленому вводі/виводі.
+
+```bash
+# tmux (без вікон; потрібен tmux: brew install tmux)
+dotnet test tests/QrCodeGenerator.E2ETests
+
+# + Terminal.app та iTerm2 (лише macOS)
+QRGEN_E2E_GUI=1 dotnet test tests/QrCodeGenerator.E2ETests
+```
+
+- Без `QRGEN_E2E_GUI=1` сценарії Terminal.app та iTerm2 позначаються як пропущені (skipped) з причиною; так само iTerm2 пропускається, якщо його не встановлено (`brew install --cask iterm2`).
+- Перед першим запуском з GUI відкрийте iTerm2 вручну й закрийте вітальні діалоги, інакше AppleScript-виклики зависають.
+- macOS попросить дозвіл на керування Terminal та iTerm2: System Settings → Privacy & Security → Automation → ваш термінал/IDE → увімкніть Terminal та iTerm2. Без дозволу тести падають з повідомленням про це через 20 с.
+- Під час GUI-тестів відкриваються й закриваються вікна терміналів і можуть перехоплювати фокус; не друкуйте в цей час.
+- Тривалість: tmux ≈ 15 с, усі три термінали ≈ 2 хв. Тести виконуються послідовно.
+- Сценарій «неочікувана помилка» використовує тестовий перемикач `QRGEN_E2E_FAULT=after-seed`, який існує лише в Debug-збірках.
+
 ## Розробка
 
 Цей проект було розроблено за допомогою штучного інтелекту:
