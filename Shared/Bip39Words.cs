@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace QrCodeGenerator
@@ -5,7 +6,7 @@ namespace QrCodeGenerator
     internal static class Bip39Words
     {
         // Стандартний словник BIP-39 (2048 слів)
-        private static readonly HashSet<string> ValidWords = new HashSet<string>
+        private static readonly HashSet<string> ValidWords = new HashSet<string>(StringComparer.Ordinal)
         {
             "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract", "absurd", "abuse",
             "access", "accident", "account", "accuse", "achieve", "acid", "acoustic", "acquire", "across", "act",
@@ -214,9 +215,12 @@ namespace QrCodeGenerator
             "yellow", "you", "young", "youth", "zebra", "zero", "zone", "zoo"
         };
 
-        public static bool IsValidWord(string word)
+        private static readonly HashSet<string>.AlternateLookup<ReadOnlySpan<char>> SpanLookup =
+            ValidWords.GetAlternateLookup<ReadOnlySpan<char>>();
+
+        public static bool IsValidWord(ReadOnlySpan<char> word)
         {
-            return ValidWords.Contains(word);
+            return SpanLookup.Contains(word);
         }
     }
 } 

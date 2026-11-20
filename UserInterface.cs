@@ -36,7 +36,6 @@ namespace QrCodeGenerator
                             break;
                         case "4":
                             continueProgram = false;
-                            Console.WriteLine("\nДякуємо за використання програми!");
                             break;
                         default:
                             Console.WriteLine("\n❌ Невірний вибір. Будь ласка, введіть 1, 2, 3 або 4.");
@@ -50,11 +49,6 @@ namespace QrCodeGenerator
                         Console.WriteLine("\nБажаєте виконати ще одну операцію? (y/n)");
                         var answer = Console.ReadLine()?.ToUpperInvariant();
                         continueProgram = answer is "Y" or "YES";
-                        
-                        if (!continueProgram)
-                        {
-                            Console.WriteLine("\nДякуємо за використання програми!");
-                        }
                     }
                 }
                 catch (ArgumentException ex)
@@ -81,28 +75,28 @@ namespace QrCodeGenerator
                     Console.WriteLine("Натисніть будь-яку клавішу, щоб продовжити...");
                     Console.ReadKey();
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"\n❌ Неочікувана помилка: {ex.Message}");
-                    Console.WriteLine("Будь ласка, повідомте про цю помилку розробникам.");
-                    Console.WriteLine("Натисніть будь-яку клавішу, щоб продовжити...");
-                    Console.ReadKey();
-                    throw;
-                }
+                // Any other exception propagates to Program.Main, which wipes the screen before reporting it.
             }
         }
 
         private static void EncryptAndGenerateQR()
         {
-            string seedPhrase = SeedPhraseManager.ReadSeedPhrase();
-            string password = SeedPhraseManager.ReadPassword();
+            using SecretBuffer seedPhrase = SeedPhraseManager.ReadSeedPhrase();
+            using SecretBuffer password = SeedPhraseManager.ReadPassword();
             string qrFilePath = SeedPhraseManager.GetValidQrFilePath();
 
-            string encryptedSeed = SeedEncryptor.Encrypt(seedPhrase, password);
-            Console.WriteLine($"\n🔐 Зашифрована сід-фраза: {encryptedSeed}");
+            string encryptedSeed = SeedEncryptor.Encrypt(seedPhrase.Span, password.Span);
+            seedPhrase.Clear();
+            password.Clear();
 
             QRCodeGeneratorUtil.GenerateQRCode(encryptedSeed, qrFilePath);
-            Console.WriteLine($"✅ QR-код збережено у {qrFilePath}");
+            Console.WriteLine($"\n✅ QR-код збережено у {qrFilePath}");
+
+            if (ConsoleHelper.AskYesNo("Показати зашифрований текст на екрані? (y/n)")
+                && ConsoleHelper.RevealSecret("\n🔐 Зашифрована сід-фраза: ", encryptedSeed))
+            {
+                ConsoleHelper.AcknowledgeAndWipe();
+            }
         }
 
         private static void DecryptQR()
@@ -244,28 +238,7 @@ namespace QrCodeGenerator
                 }
             }
 
-            string? password = null;
-            while (password == null)
-            {
-                try
-                {
-                    password = SeedPhraseManager.ReadPassword();
-                    string decryptedSeed = SeedEncryptor.Decrypt(encryptedSeed, password);
-                    ShowDecryptedSeedPhrase(decryptedSeed);
-                }
-                catch (CryptographicException)
-                {
-                    Console.WriteLine("\n❌ Невірний пароль");
-                    Console.WriteLine("Спробуйте ще раз.");
-                    password = null;
-                }
-                catch (ArgumentException ex)
-                {
-                    Console.WriteLine($"\n❌ {ex.Message}");
-                    Console.WriteLine("Спробуйте ще раз.");
-                    password = null;
-                }
-            }
+            DecryptWithPassword(encryptedSeed);
         }
 
         private static void DecryptText()
@@ -290,37 +263,45 @@ namespace QrCodeGenerator
                 }
             }
 
-            string? password = null;
-            while (password == null)
+            DecryptWithPassword(encryptedText);
+        }
+
+        private static void DecryptWithPassword(string encryptedText)
+        {
+            while (true)
             {
                 try
                 {
-                    password = SeedPhraseManager.ReadPassword();
-                    string decryptedSeed = SeedEncryptor.Decrypt(encryptedText, password);
+                    using SecretBuffer password = SeedPhraseManager.ReadPassword();
+                    using SecretBuffer decryptedSeed = SeedEncryptor.Decrypt(encryptedText, password.Span);
+                    password.Clear();
                     ShowDecryptedSeedPhrase(decryptedSeed);
+                    return;
                 }
                 catch (CryptographicException)
                 {
                     Console.WriteLine("\n❌ Невірний пароль");
                     Console.WriteLine("Спробуйте ще раз.");
-                    password = null;
                 }
                 catch (ArgumentException ex)
                 {
                     Console.WriteLine($"\n❌ {ex.Message}");
                     Console.WriteLine("Спробуйте ще раз.");
-                    password = null;
                 }
             }
         }
 
-        private static void ShowDecryptedSeedPhrase(string decryptedSeed)
+        private static void ShowDecryptedSeedPhrase(SecretBuffer decryptedSeed)
         {
             Console.WriteLine("\n✅ Сід-фразу успішно розшифровано.");
 
             if (ConsoleHelper.AskYesNo("⚠️ Показувати сід-фразу на екрані небезпечно. Ви впевнені, що хочете її побачити? (y/n)"))
             {
-                Console.WriteLine($"\n🔓 Сід-фраза: {decryptedSeed}");
+                if (ConsoleHelper.RevealSecret("\n🔓 Сід-фраза: ", decryptedSeed.Span))
+                {
+                    ConsoleHelper.AcknowledgeAndWipe();
+                }
+
                 return;
             }
 

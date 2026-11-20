@@ -1,58 +1,72 @@
 using System;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Security.Cryptography;
 
 namespace QrCodeGenerator
 {
     internal static class SeedPhraseManager
     {
-        public static void ValidateSeedPhrase(string seedPhrase)
+        private delegate void SecretValidator(ReadOnlySpan<char> value);
+
+        public static void ValidateSeedPhrase(ReadOnlySpan<char> seedPhrase)
         {
-            if (string.IsNullOrEmpty(seedPhrase))
+            if (seedPhrase.IsEmpty)
             {
                 throw new ArgumentException("Сід-фраза не може бути порожньою");
             }
 
-            if (seedPhrase.StartsWith(' ') || seedPhrase.EndsWith(' ') || seedPhrase.Contains("  ", StringComparison.Ordinal))
+            if (seedPhrase[0] == ' ' || seedPhrase[^1] == ' ' || seedPhrase.Contains("  ", StringComparison.Ordinal))
             {
                 throw new ArgumentException("Сід-фраза не повинна містити пробіли на початку/в кінці або подвійні пробіли");
             }
 
-            var words = seedPhrase.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (words.Length != 12 && words.Length != 24)
+            int wordCount = 0;
+            bool allWordsValid = true;
+            foreach (Range word in seedPhrase.Split(' '))
+            {
+                wordCount++;
+                allWordsValid &= Bip39Words.IsValidWord(seedPhrase[word]);
+            }
+
+            if (wordCount != 12 && wordCount != 24)
             {
                 throw new ArgumentException("Сід-фраза повинна містити 12 або 24 слова");
             }
 
-            if (!words.All(word => Bip39Words.IsValidWord(word)))
+            if (!allWordsValid)
             {
                 throw new ArgumentException("Сід-фраза містить недійсні слова. Використовуйте тільки слова зі стандартного списку BIP-39");
             }
         }
 
-        public static void ValidatePasswordFormat(string password)
+        public static void ValidatePasswordFormat(ReadOnlySpan<char> password)
         {
-            if (string.IsNullOrEmpty(password))
+            if (password.IsEmpty)
                 throw new ArgumentException("Пароль не може бути порожнім");
+
+            bool hasUpper = false, hasLower = false, hasDigit = false, hasSpecial = false;
+            foreach (char c in password)
+            {
+                hasUpper |= char.IsUpper(c);
+                hasLower |= char.IsLower(c);
+                hasDigit |= char.IsDigit(c);
+                hasSpecial |= !char.IsLetterOrDigit(c);
+            }
 
             var errors = new System.Collections.Generic.List<string>();
 
             if (password.Length < 12)
                 errors.Add("Пароль закороткий (потрібно мінімум 12 символів)");
 
-            if (!password.Any(c => char.IsUpper(c)))
+            if (!hasUpper)
                 errors.Add("Пароль повинен містити хоча б одну велику літеру");
 
-            if (!password.Any(c => char.IsLower(c)))
+            if (!hasLower)
                 errors.Add("Пароль повинен містити хоча б одну малу літеру");
 
-            if (!password.Any(c => char.IsDigit(c)))
+            if (!hasDigit)
                 errors.Add("Пароль повинен містити хоча б одну цифру");
 
-            if (!password.Any(c => !char.IsLetterOrDigit(c)))
+            if (!hasSpecial)
                 errors.Add("Пароль повинен містити хоча б один спеціальний символ");
 
             if (errors.Count > 0)
@@ -105,93 +119,58 @@ namespace QrCodeGenerator
             return qrFilePath;
         }
 
-        public static string ReadSeedPhrase()
+        /// <summary>Reads a masked, validated seed phrase. The caller owns and disposes the buffer.</summary>
+        public static SecretBuffer ReadSeedPhrase()
         {
-            string? seedPhrase = null;
-            while (seedPhrase == null)
-            {
-                try
-                {
-                    Console.WriteLine("\nВимоги до сід-фрази:");
-                    Console.WriteLine("- Повинна складатися з 12 або 24 слів");
-                    Console.WriteLine("- Слова повинні бути розділені одним пробілом");
-                    Console.WriteLine("- Тільки слова зі стандартного словника BIP-39");
-                    Console.WriteLine("- Всі слова повинні бути в нижньому регістрі");
-                    
-                    Console.Write("\nВведіть сід-фразу (12 або 24 слова): ");
-                    seedPhrase = Console.ReadLine();
-                    if (string.IsNullOrEmpty(seedPhrase))
-                    {
-                        throw new ArgumentException("Сід-фраза не може бути порожньою");
-                    }
-                    ValidateSeedPhrase(seedPhrase);
-                }
-                catch (ArgumentException ex)
-                {
-                    Console.WriteLine($"\n❌ {ex.Message}");
-                    Console.WriteLine("Спробуйте ще раз.");
-                    seedPhrase = null;
-                }
-            }
+            Console.WriteLine("\nВимоги до сід-фрази:");
+            Console.WriteLine("- Повинна складатися з 12 або 24 слів");
+            Console.WriteLine("- Слова повинні бути розділені одним пробілом");
+            Console.WriteLine("- Тільки слова зі стандартного словника BIP-39");
+            Console.WriteLine("- Всі слова повинні бути в нижньому регістрі");
 
-            return seedPhrase;
+            return ReadValidatedSecret("\nВведіть сід-фразу (12 або 24 слова): ", "Сід-фраза не може бути порожньою", ValidateSeedPhrase);
         }
 
-        public static string ReadPassword()
+        /// <summary>Reads a masked, validated password. The caller owns and disposes the buffer.</summary>
+        public static SecretBuffer ReadPassword()
         {
-            string? password = null;
-            while (password == null)
-            {
-                try
-                {
-                    Console.WriteLine("\nВимоги до пароля:");
-                    Console.WriteLine("- Мінімум 12 символів");
-                    Console.WriteLine("- Хоча б одна велика літера (A-Z)");
-                    Console.WriteLine("- Хоча б одна мала літера (a-z)");
-                    Console.WriteLine("- Хоча б одна цифра (0-9)");
-                    Console.WriteLine("- Хоча б один спеціальний символ (!@#$%^&* тощо)");
-                    
-                    password = ConsoleHelper.ReadMaskedLine("\nВведіть пароль: ");
-                    if (string.IsNullOrEmpty(password))
-                    {
-                        throw new ArgumentException("Пароль не може бути порожнім");
-                    }
-                    ValidatePasswordFormat(password);
-                }
-                catch (ArgumentException ex)
-                {
-                    Console.WriteLine($"\n❌ {ex.Message}");
-                    Console.WriteLine("Спробуйте ще раз.");
-                    password = null;
-                }
-            }
+            Console.WriteLine("\nВимоги до пароля:");
+            Console.WriteLine("- Мінімум 12 символів");
+            Console.WriteLine("- Хоча б одна велика літера (A-Z)");
+            Console.WriteLine("- Хоча б одна мала літера (a-z)");
+            Console.WriteLine("- Хоча б одна цифра (0-9)");
+            Console.WriteLine("- Хоча б один спеціальний символ (!@#$%^&* тощо)");
 
-            return password;
+            return ReadValidatedSecret("\nВведіть пароль: ", "Пароль не може бути порожнім", ValidatePasswordFormat);
         }
 
-        public static string ReadText()
+        private static SecretBuffer ReadValidatedSecret(string prompt, string emptyMessage, SecretValidator validate)
         {
-            string? text = null;
-            while (text == null)
+            while (true)
             {
+                SecretBuffer secret = ConsoleHelper.ReadMaskedLine(prompt);
                 try
                 {
-                    Console.WriteLine("\nВведіть зашифрований текст:");
-                    text = Console.ReadLine();
-                    if (string.IsNullOrEmpty(text))
+                    if (secret.IsEmpty)
                     {
-                        throw new ArgumentException("Текст не може бути порожнім");
+                        throw new ArgumentException(emptyMessage);
                     }
+
+                    validate(secret.Span);
+                    return secret;
                 }
                 catch (ArgumentException ex)
                 {
+                    secret.Dispose();
                     Console.WriteLine($"\n❌ {ex.Message}");
                     Console.WriteLine("Спробуйте ще раз.");
-                    text = null;
+                }
+                catch
+                {
+                    secret.Dispose();
+                    throw;
                 }
             }
-
-            return text;
         }
     }
 }
